@@ -194,12 +194,11 @@
   "activationEvents": [
     "*"
   ],
-  "main": "./out/extension.js",
-  "scripts": {
-    "compile": "./node_modules/.bin/tsc -p ./",
+  "main": "./out/extension.js",  "scripts": {
+    "compile": "tsc -p ./",
     "lint": "eslint -c .eslintrc.js --ext .ts src",
     "pretest": "npm run compile",
-    "test": "./node_modules/.bin/jest",
+    "test": "jest",
     "vpackage": "./node_modules/.bin/vsce package",
     "vpublish": "./node_modules/.bin/vsce publish",
     "vscode:prepublish": "npm run compile",
