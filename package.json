@@ -188,14 +188,17 @@
           "name": "Backlinks"
         }
       ]
-    }
+    },
+    "markdown.previewScripts": [
+      "./out/link-handler.js"
+    ]
   },
   "icon": "images/vscode-markdown-notes.png",
   "activationEvents": [
     "*"
   ],
   "main": "./out/extension.js",  "scripts": {
-    "compile": "tsc -p ./",
+    "compile": "cp src/link-handler.js out/ && tsc -p ./",
     "lint": "eslint -c .eslintrc.js --ext .ts src",
     "pretest": "npm run compile",
     "test": "jest",

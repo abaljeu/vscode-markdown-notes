@@ -43,6 +43,28 @@ module.exports = (options: any) => {
     return str.replace(/^\/+/, '')
   }
 
+  function isMarkdownOrHtmlExtension(href: string): boolean {
+    const lowerHref = href.toLowerCase()
+    return lowerHref.endsWith('.md') || 
+           lowerHref.endsWith('.markdown') || 
+           lowerHref.endsWith('.html') || 
+           lowerHref.endsWith('.htm')
+  }
+
+  function createVSCodeUri(href: string, workspaceRoot?: string): string {
+    if (path.isAbsolute(href)) {
+      // Already absolute, just format it properly
+      return `vscode://file${href.replace(/\\/g, '/')}`
+    } else if (workspaceRoot) {
+      // Resolve relative path against workspace root
+      const absolutePath = path.resolve(workspaceRoot, href)
+      return `vscode://file/${absolutePath.replace(/\\/g, '/')}`
+    } else {
+      // No workspace root, just use the relative path as is
+      return `vscode://file/${href.replace(/\\/g, '/')}`
+    }
+  }
+
   function makeRelativeToWorkspace(pagePath: string, workspaceRoot: string) {
     const normalizedWorkspaceRoot = path.resolve(workspaceRoot)
     pagePath = removeInitialSlashes(pagePath)
@@ -111,14 +133,32 @@ module.exports = (options: any) => {
     }
       href = utils.escape(href)
 
-      htmlAttrs.push(`href="${href}"`)
+      // Determine the appropriate href format based on file extension
+      const finalHref = isMarkdownOrHtmlExtension(href)
+        ? href 
+        : createVSCodeUri(href, options.workspaceRoot)
+        
+      htmlAttrs.push(`href="${finalHref}"`)
       for (let attrName in options.htmlAttributes) {
         const attrValue = options.htmlAttributes[attrName]
         htmlAttrs.push(`${attrName}="${attrValue}"`)
       }
       htmlAttrsString = htmlAttrs.join(' ')
-      
-      return `<a ${htmlAttrsString}>${href}</a>`
+      // Instead of a direct link, create an onclick handler that shows the address in an alert
+      const escapedAddress = finalHref.replace(/"/g, '&quot;')
+      htmlAttrs = [] // Reset the attributes
+      htmlAttrs.push(`href="javascript:void(0)"`)
+      htmlAttrs.push(`data-action="log"`)
+      htmlAttrs.push(`data="${escapedAddress}"`)
+      htmlAttrs.push(`style="cursor:pointer; color:blue; text-decoration:underline;"`)
+      for (let attrName in options.htmlAttributes) {
+        const attrValue = options.htmlAttributes[attrName]
+        htmlAttrs.push(`${attrName}="${attrValue}"`)
+      }
+      htmlAttrsString = htmlAttrs.join(' ')
+
+      let link = `<a ${htmlAttrsString}>${label}</a>`;
+      return link;
     }
   )
 }

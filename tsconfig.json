@@ -6,7 +6,6 @@
     "outDir": "out",
     "sourceMap": true,
     "strict": true,
-    "rootDir": "src"
-  },
-  "exclude": ["__mocks__", "node_modules", ".vscode-test"]
+    "rootDir": "src"  },
+  "exclude": ["__mocks__", "node_modules", ".vscode-test", "vscode-markdown-mermaid"]
 }

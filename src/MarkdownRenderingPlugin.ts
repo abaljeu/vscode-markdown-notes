@@ -54,19 +54,52 @@ export function postProcessLabel(label: string) {
   }
 }
 
+export function injectScriptIntoPage() {
+  const script = `
+    <script>
+      (function() {
+        console.log('Injected script running');
+        window.__currentDocumentUrl = document.location.href;
+        console.log('Current document URL:', window.__currentDocumentUrl);
+      })();
+    </script>
+  `;
+  return script;
+}
+
 export function pluginSettings(): any {
   let workspaceRoot = '';
   if (vscode.workspace.workspaceFolders) {
     workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
   }
-  
-  return require('./markdown-it-wikilinks')({
+
+  const wikilinksPlugin = require('./markdown-it-wikilinks')({
     generatePageNameFromLabel: PageNameGenerator,
     postProcessPageName: postProcessPageName,
     postProcessLabel: postProcessLabel,
     workspaceRoot: workspaceRoot,
-    uriSuffix: ``,
+    uriSuffix: '',
     description_then_file: NoteWorkspace.pipedWikiLinksSyntax() == 'desc|file',
     separator: NoteWorkspace.pipedWikiLinksSeparator(),
   });
+
+  return (md: any) => {
+    md.use(wikilinksPlugin);
+
+    const originalRender = md.render.bind(md);
+    md.render = function(src: string, env: any) {
+      let html = originalRender(src, env);
+
+      // Inject the script at the beginning of the body
+      if (html.indexOf('<body') !== -1) {
+        const bodyStart = html.indexOf('>', html.indexOf('<body')) + 1;
+        html = html.substring(0, bodyStart) + injectScriptIntoPage() + html.substring(bodyStart);
+      } else {
+        // If there's no body tag, prepend the script
+        html = injectScriptIntoPage() + html;
+      }
+
+      return html;
+    };
+  };
 }
