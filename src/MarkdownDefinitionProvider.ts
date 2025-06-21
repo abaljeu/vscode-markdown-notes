@@ -59,7 +59,8 @@ export class MarkdownDefinitionProvider implements vscode.DefinitionProvider {
     relativeToDocument: vscode.TextDocument | undefined | null
   ) {
     let files = NoteWorkspace.noteFilesFromCache(); // TODO: cache results from NoteWorkspace.noteFiles()
-    return this._filesForWikiLinkRefAndNoteFiles(ref, relativeToDocument, files);
+    let filtered = this._filesForWikiLinkRefAndNoteFiles(ref, relativeToDocument, files);
+    return filtered;
   }
 
   // Brunt of the logic for either
@@ -70,6 +71,7 @@ export class MarkdownDefinitionProvider implements vscode.DefinitionProvider {
     relativeToDocument: vscode.TextDocument | undefined | null,
     noteFiles: Array<vscode.Uri>
   ): Array<vscode.Uri> {
+
     let files: Array<vscode.Uri> = [];
     // ref.word might be either:
     // a basename for a unique file in the workspace
@@ -81,7 +83,13 @@ export class MarkdownDefinitionProvider implements vscode.DefinitionProvider {
     if (NoteWorkspace.useUniqueFilenames()) {
       // there should be exactly 1 file with name = ref.word
       files = noteFiles.filter((f) => {
-        return NoteWorkspace.noteNamesFuzzyMatch(f.fsPath, ref.word);
+        return NoteWorkspace.noteNamesFuzzyMatchWikilink(f.fsPath, ref.word);
+      });
+    }
+    else {
+      // there could be many files with name = ref.word
+      files = noteFiles.filter((f) => {
+        return NoteWorkspace.noteNamesFuzzyMatchWikilink(f.fsPath, ref.word);
       });
     }
     // If we did not find any files in the workspace,

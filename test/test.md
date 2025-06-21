@@ -1,5 +1,6 @@
 # test
 
+- [[./plain.txt]] - link to non-md file.
 - [[test]] - no extension
 - [[test.md]] - extension, exists
 - [[test-file.md]] - extension, does not exist

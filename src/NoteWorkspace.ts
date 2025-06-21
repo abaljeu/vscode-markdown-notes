@@ -266,8 +266,10 @@ export class NoteWorkspace {
     // remove the filepath:
     // NB: this may not work with relative paths?
     n = basename(n);
-    // remove the extension:
-    n = this.stripExtension(n);
+    // ensure the extension:
+    if (!n.includes('.'))
+      n+= `.${NoteWorkspace.defaultFileExtension()}`;
+
     // slugify (to normalize spaces)
     n = this.slugifyTitle(n);
     return n;
@@ -304,8 +306,9 @@ export class NoteWorkspace {
 
     // remove the potential description:
     n = this.cleanPipedWikiLink(n);
-    // remove the extension:
-    n = this.stripExtension(n);
+    // ensure the extension:
+    if (!n.includes('.'))
+      n+= `.${NoteWorkspace.defaultFileExtension()}`;
     // slugify (to normalize spaces)
     n = this.slugifyTitle(n);
     return n;
@@ -328,10 +331,10 @@ export class NoteWorkspace {
   // In general, we expect
   // `left` to be fsPath
   // `right` to be the ref word [[wiki-link]]
-  static noteNamesFuzzyMatch(left: string, right: string): boolean {
+  static noteNamesFuzzyMatchWikilink(left: string, right: string): boolean {
     return (
       this.normalizeNoteNameForFuzzyMatch(left).toLowerCase() ==
-      this.normalizeNoteNameForFuzzyMatchText(right).toLowerCase()
+      this.normalizeNoteNameForFuzzyMatch(right).toLowerCase()
     );
   }
 
@@ -361,8 +364,12 @@ export class NoteWorkspace {
     SLUGGER.reset(); // otherwise it will increment repeats with -1 -2 -3 etc.
     return SLUGGER.slug(title);
   }
-
+static hasFileExtension(title:string) : boolean {
+  return title.includes('.');
+}
   static slugifyTitle(title: string): string {
+    if (this.hasFileExtension(title))
+      return title;
     if (this.slugifyMethod() == SlugifyMethod.classic) {
       return this.slugifyClassic(title);
     } else {
@@ -372,7 +379,7 @@ export class NoteWorkspace {
 
   static noteFileNameFromTitle(title: string): string {
     let t = this.slugifyTitle(title);
-    return t.match(this.rxFileExtensions()) ? t : `${t}.${this.defaultFileExtension()}`;
+    return this.hasFileExtension(t) ? t : `${t}.${this.defaultFileExtension()}`;
   }
 
   static showNewNoteInputBox() {
@@ -598,7 +605,7 @@ export class NoteWorkspace {
 
     // let files = await vscode.workspace.findFiles('**/*');
     let files = await findNonIgnoredFiles('**/*');
-    files = files.filter((f) => f.scheme == 'file' && f.path.match(that.rxFileExtensions()));
+    // files = files.filter((f) => f.scheme == 'file' && f.path.match(that.rxFileExtensions()));
     this.noteFileCache = files;
     return files;
   }

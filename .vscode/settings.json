@@ -63,5 +63,6 @@
     "vsix",
     "wikilink",
     "wikilinks"
-  ]
+  ],
+  "markdown.preview.breaks": true
 }

@@ -28,11 +28,11 @@ async function filterGitIgnored(uris: Uri[]): Promise<Uri[]> {
   const workspaceRelativePaths = uris.map((uri) => workspace.asRelativePath(uri, false));
   for (const workspaceDirectory of workspace.workspaceFolders!) {
     const workspaceDirectoryPath = workspaceDirectory.uri.fsPath;
-    try {
-      const { stdout, stderr } = await new Promise<{ stdout: string; stderr: string }>(
+    try {     
+       const { stdout, stderr } = await new Promise<{ stdout: string; stderr: string }>(
         (resolve, reject) => {
           exec(
-            `git check-ignore ${workspaceRelativePaths.join(' ')}`,
+            `git check-ignore -- ${workspaceRelativePaths.join(' ')}`,
             { cwd: workspaceDirectoryPath },
             // https://git-scm.com/docs/git-check-ignore#_exit_status
             (error: ExecException | null, stdout, stderr) => {

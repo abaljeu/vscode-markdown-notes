@@ -80,18 +80,18 @@ describe('NoteWorkspace.slug', () => {
 describe('NoteWorkspace.noteNamesFuzzyMatch', () => {
   test('noteNamesFuzzyMatch', () => {
     expect(
-      NoteWorkspace.noteNamesFuzzyMatch('dir/sub/the-heat-is-on.md', 'the-heat-is-on.md')
+      NoteWorkspace.noteNamesFuzzyMatchWikilink('dir/sub/the-heat-is-on.md', 'the-heat-is-on.md')
     ).toBeTruthy();
     expect(
-      NoteWorkspace.noteNamesFuzzyMatch('dir/sub/the-heat-is-on.md', 'the-heat-is-on')
+      NoteWorkspace.noteNamesFuzzyMatchWikilink('dir/sub/the-heat-is-on.md', 'the-heat-is-on')
     ).toBeTruthy();
     expect(
-      NoteWorkspace.noteNamesFuzzyMatch('dir/sub/the-heat-is-on.markdown', 'the-heat-is-on')
+      NoteWorkspace.noteNamesFuzzyMatchWikilink('dir/sub/the-heat-is-on.markdown', 'the-heat-is-on')
     ).toBeTruthy();
-    expect(NoteWorkspace.noteNamesFuzzyMatch('[[wiki-link.md]]', 'wiki-link.md')).toBeTruthy();
-    expect(NoteWorkspace.noteNamesFuzzyMatch('[[wiki-link]]', 'wiki-link.md')).toBeTruthy();
-    expect(NoteWorkspace.noteNamesFuzzyMatch('[[wiki link]]', 'wiki-link.md')).toBeTruthy();
-    expect(NoteWorkspace.noteNamesFuzzyMatch('[[链接]]', '链接.md')).toBeTruthy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('[[wiki-link.md]]', 'wiki-link.md')).toBeTruthy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('[[wiki-link]]', 'wiki-link.md')).toBeTruthy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('[[wiki link]]', 'wiki-link.md')).toBeTruthy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('[[链接]]', '链接.md')).toBeTruthy();
     // TODO: if we add support for #headings, we will want these tests to pass:
     // expect(NoteWorkspace.noteNamesFuzzyMatch('[[wiki-link.md#with-heading]]', 'wiki-link.md')).toBeTruthy();
     // expect(NoteWorkspace.noteNamesFuzzyMatch('[[wiki-link#with-heading]]', 'wiki-link.md')).toBeTruthy();
@@ -105,14 +105,14 @@ describe('NoteWorkspace.noteNamesFuzzyMatch', () => {
     // lower case is expected because 'slugifyTitle' includes toLowerCase
     expect(NoteWorkspace.slugifyTitle('Link/Topic')).toEqual('link-topic');
     expect(NoteWorkspace.normalizeNoteNameForFuzzyMatchText('Link/Topic')).toEqual('link-topic');
-    expect(NoteWorkspace.noteNamesFuzzyMatch('dir/sub/link-topic.md', 'Link/Topic')).toBeTruthy();
-    expect(NoteWorkspace.noteNamesFuzzyMatch('dir/sub/Link-Topic.md', 'Link/Topic')).toBeTruthy();
-    expect(NoteWorkspace.noteNamesFuzzyMatch('dir/sub/link-topic.md', 'link/topic')).toBeTruthy();
-    expect(NoteWorkspace.noteNamesFuzzyMatch('dir/sub/Link-Topic.md', 'link/topic')).toBeTruthy();
-    expect(NoteWorkspace.noteNamesFuzzyMatch('dir/sub/link-topic.md', 'Link/topic')).toBeTruthy();
-    expect(NoteWorkspace.noteNamesFuzzyMatch('dir/sub/link-topic.md', 'link/Topic')).toBeTruthy();
-    expect(NoteWorkspace.noteNamesFuzzyMatch('dir/sub/Link-Topic.md', 'Link/topic')).toBeTruthy();
-    expect(NoteWorkspace.noteNamesFuzzyMatch('dir/sub/Link-Topic.md', 'link/Topic')).toBeTruthy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('dir/sub/link-topic.md', 'Link/Topic')).toBeTruthy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('dir/sub/Link-Topic.md', 'Link/Topic')).toBeTruthy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('dir/sub/link-topic.md', 'link/topic')).toBeTruthy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('dir/sub/Link-Topic.md', 'link/topic')).toBeTruthy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('dir/sub/link-topic.md', 'Link/topic')).toBeTruthy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('dir/sub/link-topic.md', 'link/Topic')).toBeTruthy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('dir/sub/Link-Topic.md', 'Link/topic')).toBeTruthy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('dir/sub/Link-Topic.md', 'link/Topic')).toBeTruthy();
   });
 
   test('noteNamesFuzzyMatch', () => {
@@ -135,8 +135,10 @@ describe('NoteWorkspace.rx', () => {
     expect(('Some [[wiki-link]].'.match(rx) || [])[0]).toEqual('[[wiki-link]]');
     expect(('Some [[wiki link]].'.match(rx) || [])[0]).toEqual('[[wiki link]]');
     expect(('一段 [[链接]]。'.match(rx) || [])[0]).toEqual('[[链接]]');
+
     expect(('Some [[wiki-link.md]].'.match(rx) || [])[0]).toEqual('[[wiki-link.md]]');
     expect(('一段 [[链接.md]]。'.match(rx) || [])[0]).toEqual('[[链接.md]]');
+    expect(('Link to [[./plain.txt]] file.'.match(rx) || [])[0]).toEqual('[[./plain.txt]]');
     // TODO: this returns a match OK right now, but I think we will want to
     // modify the result to contain meta-data that says there is also a #heading / parses it out
     expect(('Some [[wiki-link.md#with-heading]].'.match(rx) || [])[0]).toEqual(
@@ -274,7 +276,8 @@ line1 word1 word2
 #tag word <- line 6, chars 0-3
 # [[]] [[ <- line 7, empty refs
 [](test-hyperlink.md) <- link at line8, chars 0-11
-[]() [](`; // line 9, empty refs
+[]() []() <- line 9, empty refs
+[[./plain.txt]] <- link at line10, chars 0-15`;
 
 describe('Note', () => {
   test('Note._rawRangesForWord', () => {
@@ -321,6 +324,16 @@ describe('Note', () => {
     expect(ranges).toMatchObject([
       { start: {line: 8, character: 0}, end: {line: 8, character: 21} },
     ]);
+    w = {
+      word: './plain.txt',
+      hasExtension: true,
+      type: RefType.WikiLink,
+      range: undefined,
+    };
+    ranges = Note.fromData(document)._rawRangesForWord(w);
+    expect(ranges).toMatchObject([
+      { start: {line: 10, character: 0}, end: {line: 10, character: 15} },
+    ]);
   });
 
   test('Note.tagSet', () => {
@@ -357,10 +370,10 @@ describe('NoteWorkspace.pipedWikiLinks', () => {
       slugifyMethod: SlugifyMethod.github,
     });
     expect(
-      NoteWorkspace.noteNamesFuzzyMatch('filename.md', 'description|filename.md')
+      NoteWorkspace.noteNamesFuzzyMatchWikilink('filename.md', 'description|filename.md')
     ).toBeTruthy();
     expect(
-      NoteWorkspace.noteNamesFuzzyMatch('filename.md', 'description |filename.md')
+      NoteWorkspace.noteNamesFuzzyMatchWikilink('filename.md', 'description |filename.md')
     ).toBeTruthy();
   });
 
@@ -371,10 +384,10 @@ describe('NoteWorkspace.pipedWikiLinks', () => {
       slugifyMethod: SlugifyMethod.classic,
     });
     expect(
-      NoteWorkspace.noteNamesFuzzyMatch('filename.md', 'description|filename.md')
+      NoteWorkspace.noteNamesFuzzyMatchWikilink('filename.md', 'description|filename.md')
     ).toBeTruthy();
     expect(
-      NoteWorkspace.noteNamesFuzzyMatch('filename.md', 'description |filename.md')
+      NoteWorkspace.noteNamesFuzzyMatchWikilink('filename.md', 'description |filename.md')
     ).toBeTruthy();
   });
 
@@ -384,7 +397,7 @@ describe('NoteWorkspace.pipedWikiLinks', () => {
       pipedWikiLinksSyntax: PipedWikiLinksSyntax.descFile,
     });
     // Because of this change, these should not match anymore...
-    expect(NoteWorkspace.noteNamesFuzzyMatch('filename.md', 'description|filename.md')).toBeFalsy();
+    expect(NoteWorkspace.noteNamesFuzzyMatchWikilink('filename.md', 'description|filename.md')).toBeFalsy();
 
     // ... And cleanPipedWikiLink should return the original string.
     expect(NoteWorkspace.cleanPipedWikiLink('description|file')).toEqual('description|file');
@@ -398,7 +411,7 @@ describe('NoteWorkspace.pipedWikiLinks', () => {
     });
 
     expect(
-      NoteWorkspace.noteNamesFuzzyMatch('filename.md', 'description@filename.md')
+      NoteWorkspace.noteNamesFuzzyMatchWikilink('filename.md', 'description@filename.md')
     ).toBeTruthy();
 
     expect(NoteWorkspace.cleanPipedWikiLink('description@file')).toEqual('file');
@@ -412,7 +425,7 @@ describe('NoteWorkspace.pipedWikiLinks', () => {
     });
 
     expect(
-      NoteWorkspace.noteNamesFuzzyMatch('filename.md', 'filename.md|description')
+      NoteWorkspace.noteNamesFuzzyMatchWikilink('filename.md', 'filename.md|description')
     ).toBeTruthy();
 
     expect(NoteWorkspace.cleanPipedWikiLink('file|description')).toEqual('file');
