@@ -1,3 +1,4 @@
+// Original: https://github.com/kortina/vscode-markdown-notes
 import * as vscode from 'vscode';
 import { API } from './API';
 import { BacklinksTreeDataProvider } from './BacklinksTreeDataProvider';
