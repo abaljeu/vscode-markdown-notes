@@ -53,16 +53,14 @@ export class MarkdownDefinitionProvider implements vscode.DefinitionProvider {
     let files: Array<vscode.Uri> = await NoteWorkspace.noteFiles();
     return this._filesForWikiLinkRefAndNoteFiles(ref, relativeToDocument, files);
   }
-
   static filesForWikiLinkRefFromCache(
     ref: Ref,
     relativeToDocument: vscode.TextDocument | undefined | null
   ) {
     let files = NoteWorkspace.noteFilesFromCache(); // TODO: cache results from NoteWorkspace.noteFiles()
     let filtered = this._filesForWikiLinkRefAndNoteFiles(ref, relativeToDocument, files);
-    return filtered;
+    return filtered.map(uri => vscode.Uri.file(basename(uri.fsPath)));
   }
-
   // Brunt of the logic for either
   // filesForWikiLinkRef
   // or, filesForWikiLinkRefFromCache
@@ -73,6 +71,13 @@ export class MarkdownDefinitionProvider implements vscode.DefinitionProvider {
   ): Array<vscode.Uri> {
 
     let files: Array<vscode.Uri> = [];
+    
+    // Special case: if no relativeToDocument and ref is a wikilink with path chars or period
+    if (!relativeToDocument && ref.type === RefType.WikiLink && 
+        (ref.word.includes('/') || ref.word.includes('\\') || ref.word.includes('.'))) {
+      return [vscode.Uri.file(ref.word)];
+    }
+    
     // ref.word might be either:
     // a basename for a unique file in the workspace
     // or, a relative path to a file
@@ -92,6 +97,12 @@ export class MarkdownDefinitionProvider implements vscode.DefinitionProvider {
         return NoteWorkspace.noteNamesFuzzyMatchWikilink(f.fsPath, ref.word);
       });
     }
+    
+    // If no relativeToDocument, return only the first match to ensure single file
+    if (!relativeToDocument && files.length > 0) {
+      return [files[0]];
+    }
+    
     // If we did not find any files in the workspace,
     // see if a file exists at the relative path:
     if (files.length == 0 && relativeToDocument && relativeToDocument.uri) {
