@@ -198,7 +198,8 @@
     "*"
   ],
   "main": "./out/extension.js",  "scripts": {
-    "compile": "cp src/link-handler.js out/ && tsc -p ./",
+    "copy": "cp src/link-handler.js out/ ",
+    "compile": "npm run copy && tsc -p ./",
     "lint": "eslint -c .eslintrc.js --ext .ts src",
     "pretest": "npm run compile",
     "test": "jest",
