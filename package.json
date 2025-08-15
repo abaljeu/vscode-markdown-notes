@@ -205,8 +205,8 @@
         "pack": "json-bump --patch package.json && vsce package && git commit -a -m\"New patch\"",
         "pretest": "npm run compile",
         "test": "jest",
-        "vpackage": "./node_modules/.bin/vsce package",
-        "vpublish": "./node_modules/.bin/vsce publish",
+        "vpackage": "npx vsce package",
+        "vpublish": "npx vsce publish",
         "vscode:prepublish": "npm run compile",
         "watch": "tsc -watch -p ./"
     },
