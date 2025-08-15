@@ -2,7 +2,7 @@
 //    "@thomaskoppelaar/markdown-it-wikilinks": "^1.3.0",
 'use strict'
 
-const Plugin = require('markdown-it-regexp')
+const WikiLinkPlugin = require('markdown-it-regexp')
 const extend = require('extend')
 const sanitize = require('sanitize-filename')
 const path = require('path')
@@ -32,10 +32,9 @@ module.exports = (options: any) => {
       return label
     }
   }
-
   options = extend(true, defaults, options)
 
-  return Plugin(
+  return WikiLinkPlugin(
     new RegExp("\\[\\[([^sep\\]]+)(sep[^sep\\]]+)?\\]\\]".replace(/sep/g, options.separator)),
     (match: RegExpMatchArray, utils: any) => {
       let description = ''

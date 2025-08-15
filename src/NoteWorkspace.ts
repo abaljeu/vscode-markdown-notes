@@ -266,12 +266,14 @@ export class NoteWorkspace {
     // remove the filepath:
     // NB: this may not work with relative paths?
     n = basename(n);
+
+    // slugify (to normalize spaces)
+    n = this.slugifyTitle(n);
+
     // ensure the extension:
     if (!n.includes('.'))
       n+= `.${NoteWorkspace.defaultFileExtension()}`;
 
-    // slugify (to normalize spaces)
-    n = this.slugifyTitle(n);
     return n;
   }
 
